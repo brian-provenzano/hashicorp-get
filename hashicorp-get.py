@@ -3,7 +3,7 @@
 """This simple script is used to grab latest or version of choice of any of the following
 Hashicorp tools: terraform;packer;vagrant;vault
 
-This script assumes LINUX AMD64 for simplicity and the fact that is all I use currently.  
+This script assumes LINUX AMD64 for simplicity and the fact that is all I use currently on my dev laptop / servers.  
 I may update latest for Windows, Mac and ability to choose arch as well.
 
 This attempts to extend this simple "get latest" bash script:
@@ -21,7 +21,6 @@ Example - get 0.9.0 for terraform:
 TODO - support "all" for grabbing all script supported requestedProducts
 TODO - support vagrant (download only - do not auto install since it is a rpm/deb/pkg)
 TODO - add additional sanity checks
-TODO - clean up old zipfiles  - meaning cleanup previous versions zipfile
 TODO - support various archs
 TODO - support checksum checks on the downloaded file
 TODO - support check current installed version / option to confirm overwrite/upgrade
@@ -29,7 +28,10 @@ TODO - refactor this using classes as an exercise; this grew into serious proced
 
 BJP 2/21/18"""
 
-import requests # 3rd party : not standard python module (must install via pip)
+# 3rd party : not standard python module (must install via pip); 
+# Many linux distros however include this by default
+import requests 
+
 import zipfile
 import re
 import argparse
@@ -59,7 +61,7 @@ def Main():
                         "(e.g. '0.9', 'latest'")                   
     parser.add_argument("-y", "--yes", action="store_true", help="suppress confirm " \
                         "(quiet mode). Danger Will Robinson!!")
-    parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.1 (Custom " \
+    parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.2 (Custom " \
                         "installer for getting latest version of Hashicorp supported tools)")
     args = parser.parse_args()
     requestedProductToInstall = args.product.lstrip()

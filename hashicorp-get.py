@@ -36,7 +36,7 @@ import argparse
 import os
 from distutils.version import LooseVersion
 from subprocess import call
-#from pathlib import Path
+from pathlib import Path
 
 # Adjust these vars as needed for your environment
 # #########################################################################
@@ -52,17 +52,17 @@ SUPPORTED_HASHICORPTOOLS = "terraform,packer,vault"
 
 def Main():
     """ Main()"""
-    parser = argparse.ArgumentParser(prog='hashicorp-get')
-    parser.add_argument("requestedProduct", type=str, help="requestedProduct to install/download \n" \
+    parser = argparse.ArgumentParser(prog="hashicorp-get")
+    parser.add_argument("product", type=str, help="Product to install/download \n" \
                         "Currently supported : ('{0}')".format(SUPPORTED_HASHICORPTOOLS))
     parser.add_argument("version", type=str, help="Version to install " \
                         "(e.g. '0.9', 'latest'")                   
     parser.add_argument("-y", "--yes", action="store_true", help="suppress confirm " \
                         "(quiet mode). Danger Will Robinson!!")
-    parser.add_argument("-v", "--version", action='version', version='%(prog)s 1.1 (Custom " \
-                        "installer for getting latest version of Hashicorp supported tools)')
+    parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.1 (Custom " \
+                        "installer for getting latest version of Hashicorp supported tools)")
     args = parser.parse_args()
-    requestedProductToInstall = args.requestedProduct.lstrip()
+    requestedProductToInstall = args.product.lstrip()
     requestedProductVersion = args.version.lstrip()
 
     try:
@@ -148,27 +148,36 @@ def PromptQuestion(requestedProduct, downloadLocation):
 
 
 def Run(requestedProduct, toolInstallPath, version):
-    fullDownload = ""
-    fullToolPath = ""
+    fullDownloadURL = ""
+    zipfile = ""
     dictValidReleasesSorted = getVersions(HASHICORP_ALLRELEASES,requestedProduct,version)
 
     if (version == "latest"):
         version = list(dictValidReleasesSorted.keys())[-1] #this sucks, but no dict.first(),last() in python 3
 
     if(dictValidReleasesSorted.get(version) != None):
-        fullDownload = dictValidReleasesSorted.get(version)
-        fullToolPath = fullDownload.split("/")[-1]  
+        fullDownloadURL = dictValidReleasesSorted.get(version)
+        zipfile = fullDownloadURL.split("/")[-1]  
     else:
         raise ValueError("Version specified was not found.  Try again")
 
-    DownloadFile(fullDownload,fullToolPath)
-    extractedFile = Unzip(fullToolPath)
+    fullPathToZipfile = (toolInstallPath + zipfile)
+    DownloadFile(fullDownloadURL,fullPathToZipfile)
+    extractedFile = Unzip(fullPathToZipfile)
     # Finally make the file 775
     # TODO - this would need to be updated to support Windows (unix-like systems such as )
-    # MacOS, Linux etc are OK with os.chmod()
+    # MacOS, Linux etc are OK with os.chmod() 
     os.chmod((toolInstallPath + extractedFile),0o775)
-    print("5 - Done!!")
 
+    #cleanup
+    Clean(fullPathToZipfile)
+    print("6 - Done!!")
+
+def Clean(theZipFile):
+    previousZip = Path(theZipFile)
+    if previousZip.is_file():
+        previousZip.unlink()
+        print("5 - Cleaning up (Deleting zipfile) ...")
 
 if __name__ == '__main__':
     Main()

@@ -54,15 +54,18 @@ SUPPORTED_HASHICORPTOOLS = "terraform,packer,vault"
 
 def Main():
     """ Main()"""
-    parser = argparse.ArgumentParser(prog="hashicorp-get")
-    parser.add_argument("product", type=str, help="Product to install/download \n" \
+    parser = argparse.ArgumentParser(prog="hashicorp-get", description="Custom " \
+                        "installer for getting latest or specified version of script supported Hashicorp tools. " \
+                        "To see list of supported tools see help below under 'product' arg.")
+    parser.add_argument("product", type=str, help="Product to install/download.  " \
                         "Currently supported : ('{0}')".format(SUPPORTED_HASHICORPTOOLS))
     parser.add_argument("version", type=str, help="Version to install " \
-                        "(e.g. '0.9', 'latest'")                   
+                        "(e.g. '0.9.0', 'latest')")                   
     parser.add_argument("-y", "--yes", action="store_true", help="suppress confirm " \
                         "(quiet mode). Danger Will Robinson!!")
-    parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.2 (Custom " \
-                        "installer for getting latest version of Hashicorp supported tools)")
+    parser.add_argument("-v", "--version", action="version", version="1.3")
+    # parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.2 (Custom " \
+    #                     "installer for getting latest version of Hashicorp supported tools)")
     args = parser.parse_args()
     requestedProductToInstall = args.product.lstrip()
     requestedProductVersion = args.version.lstrip()

@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
-"""This simple script is used to grab latest or version of choice of any of the following
-Hashicorp tools: terraform;packer;vagrant;vault
+"""This simple script is used to grab latest or version of choice - see CONSTs below for details
 
 This script assumes LINUX AMD64 for simplicity and the fact that is all I use currently on my dev laptop / servers.  
 I may update latest for Windows, Mac and ability to choose arch as well.
@@ -135,7 +134,7 @@ def Unzip(fullPath,quietMode):
         # should always be 1 binary file unless Hashicorp jumps the shark on the build
         extractedFile = zip.namelist()[0]
         if not quietMode:
-            print("3 - Extracting (unzip) -> [{0}] ...".format(extractedFile))
+            print("[-] - Extracting (unzip) -> [{0}] ...".format(extractedFile))
         zip.extractall(HASHICORP_TOOLPATH)
     return extractedFile
 
@@ -145,10 +144,10 @@ def DownloadFile(url, theFile, quietMode):
     # open in binary mode
     with open(theFile, "wb") as file:
         if not quietMode:
-            print("1 - Downloading -> [{0}] ...".format(url))
+            print("[-] - Downloading -> [{0}] ...".format(url))
         response = requests.get(url)
         if not quietMode:
-            print("2 - Saving -> [{0}] ...".format(theFile))
+            print("[-] - Saving -> [{0}] ...".format(theFile))
         file.write(response.content)
 
 
@@ -184,14 +183,14 @@ def Run(requestedProduct, toolInstallPath, version, quietMode):
     #cleanup
     Clean(fullPathToZipfile,quietMode)
     if not quietMode:
-        print("6 - Done!!")
+        print("[-] - Done!!")
 
 def Clean(theZipFile,quietMode):
     previousZip = Path(theZipFile)
     if previousZip.is_file():
         previousZip.unlink()
         if not quietMode:
-            print("5 - Cleaning up (Deleting zipfile) ...")
+            print("[-] - Cleaning up (Deleting zipfile) -> [{0}]".format(theZipFile))
 
 if __name__ == '__main__':
     Main()

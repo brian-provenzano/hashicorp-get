@@ -26,7 +26,7 @@ TODO - support checksum checks on the downloaded file
 TODO - support check current installed version / option to confirm overwrite/upgrade
 TODO - refactor this using classes as an exercise; this grew into serious procedural shit...
 
-BJP 2/21/18"""
+BJP original 2/21/18"""
 
 # 3rd party : not standard python module (must install via pip); 
 # Many linux distros however include this by default
@@ -61,24 +61,28 @@ def Main():
                         "Currently supported : ('{0}')".format(SUPPORTED_HASHICORPTOOLS))
     parser.add_argument("version", type=str, help="Version to install " \
                         "(e.g. '0.9.0', 'latest')")                   
-    parser.add_argument("-y", "--yes", action="store_true", help="suppress confirm " \
-                        "(quiet mode). Danger Will Robinson!!")
-    parser.add_argument("-v", "--version", action="version", version="1.3")
-    # parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.2 (Custom " \
-    #                     "installer for getting latest version of Hashicorp supported tools)")
+    parser.add_argument("-y", "--yes", action="store_true", help="Suppress confirmation prompt. " \
+                        "If you want total silence use in conjunction with -q")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Suppress all messages " \
+                        "(quiet mode). Useful for automated installs.")
+    parser.add_argument("-v", "--version", action="version", version="1.4")
+
     args = parser.parse_args()
     requestedProductToInstall = args.product.lstrip()
     requestedProductVersion = args.version.lstrip()
 
     try:
         if (requestedProductToInstall in SUPPORTED_HASHICORPTOOLS):
+            quietMode = False
+            if args.quiet:
+                quietMode = True
             if args.yes:
-               Run(requestedProductToInstall,HASHICORP_TOOLPATH,requestedProductVersion)
+               Run(requestedProductToInstall,HASHICORP_TOOLPATH,requestedProductVersion,quietMode)
             else:
                 answer = input(PromptQuestion(requestedProductToInstall,HASHICORP_TOOLPATH))
                 answer = True if answer.lstrip() in ('yes', 'y') else False
                 if answer:
-                    Run(requestedProductToInstall,HASHICORP_TOOLPATH,requestedProductVersion)
+                    Run(requestedProductToInstall,HASHICORP_TOOLPATH,requestedProductVersion,quietMode)
         elif requestedProductToInstall == "all":
             #stub
             raise NotImplementedError("Installing 'all' is not supported currently")
@@ -124,24 +128,27 @@ def getVersions(url, requestedProduct, requestedVersion):
     return dictValidReleasesSorted
 
 
-def Unzip(fullPath):
+def Unzip(fullPath,quietMode):
     """ Unzip file and place in tools path location """
     with zipfile.ZipFile(fullPath, 'r') as zip:
         # TODO - check zipfile contents for file number;
         # should always be 1 binary file unless Hashicorp jumps the shark on the build
         extractedFile = zip.namelist()[0]
-        print("3 - Extracting (unzip) -> [{0}] ...".format(extractedFile))
+        if not quietMode:
+            print("3 - Extracting (unzip) -> [{0}] ...".format(extractedFile))
         zip.extractall(HASHICORP_TOOLPATH)
     return extractedFile
 
 
-def DownloadFile(url, theFile):
+def DownloadFile(url, theFile, quietMode):
     """ Download/save the file from Hashicorp servers """
     # open in binary mode
     with open(theFile, "wb") as file:
-        print("1 - Downloading -> [{0}] ...".format(url))
+        if not quietMode:
+            print("1 - Downloading -> [{0}] ...".format(url))
         response = requests.get(url)
-        print("2 - Saving -> [{0}] ...".format(theFile))
+        if not quietMode:
+            print("2 - Saving -> [{0}] ...".format(theFile))
         file.write(response.content)
 
 
@@ -152,7 +159,7 @@ def PromptQuestion(requestedProduct, downloadLocation):
     return question
 
 
-def Run(requestedProduct, toolInstallPath, version):
+def Run(requestedProduct, toolInstallPath, version, quietMode):
     fullDownloadURL = ""
     zipfile = ""
     dictValidReleasesSorted = getVersions(HASHICORP_ALLRELEASES,requestedProduct,version)
@@ -167,22 +174,24 @@ def Run(requestedProduct, toolInstallPath, version):
         raise ValueError("Version specified was not found.  Try again")
 
     fullPathToZipfile = (toolInstallPath + zipfile)
-    DownloadFile(fullDownloadURL,fullPathToZipfile)
-    extractedFile = Unzip(fullPathToZipfile)
+    DownloadFile(fullDownloadURL,fullPathToZipfile,quietMode)
+    extractedFile = Unzip(fullPathToZipfile,quietMode)
     # Finally make the file 775
     # TODO - this would need to be updated to support Windows (unix-like systems such as )
     # MacOS, Linux etc are OK with os.chmod() 
     os.chmod((toolInstallPath + extractedFile),0o775)
 
     #cleanup
-    Clean(fullPathToZipfile)
-    print("6 - Done!!")
+    Clean(fullPathToZipfile,quietMode)
+    if not quietMode:
+        print("6 - Done!!")
 
-def Clean(theZipFile):
+def Clean(theZipFile,quietMode):
     previousZip = Path(theZipFile)
     if previousZip.is_file():
         previousZip.unlink()
-        print("5 - Cleaning up (Deleting zipfile) ...")
+        if not quietMode:
+            print("5 - Cleaning up (Deleting zipfile) ...")
 
 if __name__ == '__main__':
     Main()

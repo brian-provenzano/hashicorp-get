@@ -23,18 +23,21 @@ TODO - add additional sanity checks
 TODO - support various archs
 TODO - support checksum checks on the downloaded file
 TODO - support check current installed version / option to confirm overwrite/upgrade
-TODO - refactor this using classes as an exercise; this grew into serious procedural shit...
+TODO - refactor this using classes as an exercise; this grew into a serious procedural mess
 
 BJP original 2/21/18"""
 
+# Check : This seems cheeseball but I don't know of another way to do it in scope
 # 3rd party : not standard python module (must install via pip); 
 # Many linux distros however include this by default
 import requests 
 
 import zipfile
 import re
+import platform
 import argparse
 import os
+import sys
 from distutils.version import LooseVersion
 from subprocess import call
 from pathlib import Path
@@ -64,13 +67,14 @@ def Main():
                         "If you want total silence use in conjunction with -q")
     parser.add_argument("-q", "--quiet", action="store_true", help="Suppress all messages " \
                         "(quiet mode). Useful for automated installs.")
-    parser.add_argument("-v", "--version", action="version", version="1.4")
+    parser.add_argument("-v", "--version", action="version", version="1.5")
 
     args = parser.parse_args()
     requestedProductToInstall = args.product.lstrip()
     requestedProductVersion = args.version.lstrip()
 
     try:
+        checkCompatibility()
         if (requestedProductToInstall in SUPPORTED_HASHICORPTOOLS):
             quietMode = False
             if args.quiet:
@@ -101,6 +105,14 @@ def Main():
         print("Request timed out trying to reach Hashicorp servers - REASON [{0}]".format(te))
     except Exception as e:
             print("Unknown error - REASON [{0}]".format(e))
+
+
+def checkCompatibility():
+    """ check requirements """
+    if not ((sys.version_info.major == 3) and (sys.version_info.minor >= 6)):
+        raise ValueError("You must be using Python 3.6 to use this utility")
+    if not ((platform.machine() == "x86_64") and (platform.system() == "Linux")):
+        raise ValueError("You must be running Linux x86_64 to use this utility")
 
 
 def getVersions(url, requestedProduct, requestedVersion):
@@ -186,6 +198,7 @@ def Run(requestedProduct, toolInstallPath, version, quietMode):
         print("[-] - Done!!")
 
 def Clean(theZipFile,quietMode):
+    """ Clean up old zip file, etc after download """
     previousZip = Path(theZipFile)
     if previousZip.is_file():
         previousZip.unlink()

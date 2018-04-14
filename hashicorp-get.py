@@ -74,7 +74,7 @@ def Main():
     requestedProductVersion = args.version.lstrip()
 
     try:
-        checkCompatibility()
+        CheckCompat()
         if (requestedProductToInstall in SUPPORTED_HASHICORPTOOLS):
             quietMode = False
             if args.quiet:
@@ -107,7 +107,7 @@ def Main():
             print("Unknown error - REASON [{0}]".format(e))
 
 
-def checkCompatibility():
+def CheckCompat():
     """ check requirements """
     if not ((sys.version_info.major == 3) and (sys.version_info.minor >= 6)):
         raise ValueError("You must be using Python 3.6 to use this utility")
@@ -115,7 +115,7 @@ def checkCompatibility():
         raise ValueError("You must be running Linux x86_64 to use this utility")
 
 
-def getVersions(url, requestedProduct, requestedVersion):
+def GetVersions(url, requestedProduct, requestedVersion):
     """ get dict of GA release versions with download url (version,url) """
     dictValidReleasesSorted = {}
     response = requests.get(url)
@@ -173,7 +173,7 @@ def PromptQuestion(requestedProduct, downloadLocation):
 def Run(requestedProduct, toolInstallPath, version, quietMode):
     fullDownloadURL = ""
     zipfile = ""
-    dictValidReleasesSorted = getVersions(HASHICORP_ALLRELEASES,requestedProduct,version)
+    dictValidReleasesSorted = GetVersions(HASHICORP_ALLRELEASES,requestedProduct,version)
 
     if (version == "latest"):
         version = list(dictValidReleasesSorted.keys())[-1] #this sucks, but no dict.first(),last() in python 3

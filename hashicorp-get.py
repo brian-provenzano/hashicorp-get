@@ -9,13 +9,15 @@ This attempts to extend this simple "get latest" bash script:
 echo "https://releases.hashicorp.com/terraform/$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | jq -r -M '.current_version')/terraform_$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | jq -r -M '.current_version')_darwin_amd64.zip"
 
 Usage:
-hashicorp-get <specific-toolname> <version>
+hashicorp-get <specific-toolname> <version> <installpath>
 
 Example - get latest for terraform:
->hashicorp-get terraform latest
+>hashicorp-get terraform latest /usr/bin/
 
 Example - get 0.9.0 for terraform:
->hashicorp-get terraform 0.9.0
+>hashicorp-get terraform 0.9.0 /home/myuser/bin/
+
+NOTE: trailing slash on installpath is needed!
 
 TODO - support "all" for grabbing all script supported requestedProducts
 TODO - support vagrant (download only - do not auto install since it is a rpm/deb/pkg)
@@ -23,7 +25,7 @@ TODO - add additional sanity checks
 TODO - support various archs
 TODO - support checksum checks on the downloaded file
 TODO - support check current installed version / option to confirm overwrite/upgrade
-TODO - refactor this using classes as an exercise; this grew into a serious procedural mess
+TODO - maybe refactor this using classes as an exercise; this grew into a serious procedural mess
 
 BJP original 2/21/18"""
 
@@ -42,15 +44,18 @@ from distutils.version import LooseVersion
 from subprocess import call
 from pathlib import Path
 
-# Adjust these vars as needed for your environment
-# #########################################################################
+##########################################
+#- Modify the options below as needed (but probably shouldnt unless supported
+##########################################
 # Path to location to place the binaries - include the trailing slash!
 # API shows all versions for all requestedProducts (entire history)
 HASHICORP_ALLRELEASES = "https://releases.hashicorp.com/index.json"
 SUPPORTED_ARCH = "amd64"
 SUPPORTED_OS = "linux"
 SUPPORTED_HASHICORPTOOLS = "terraform,packer,vault"
-###########################################################################
+##########################################
+#- END - Do not modify below here!!!
+##########################################
 
 
 def Main():
@@ -63,7 +68,7 @@ def Main():
     parser.add_argument("version", type=str, help="Version to install " \
                         "(e.g. '0.9.0', 'latest')")     
     parser.add_argument("installpath", type=str, help="Path to install tool to " \
-                        "(e.g. '/usr/bin', '/home/someuser/bin')")                     
+                        "(e.g. '/usr/bin/', '/home/someuser/bin/')")                     
     parser.add_argument("-y", "--yes", action="store_true", help="Suppress confirmation prompt. " \
                         "If you want total silence use in conjunction with -q")
     parser.add_argument("-q", "--quiet", action="store_true", help="Suppress all messages " \

@@ -45,7 +45,6 @@ from pathlib import Path
 # Adjust these vars as needed for your environment
 # #########################################################################
 # Path to location to place the binaries - include the trailing slash!
-HASHICORP_TOOLPATH = "/home/brianprovenzano/bin/"
 # API shows all versions for all requestedProducts (entire history)
 HASHICORP_ALLRELEASES = "https://releases.hashicorp.com/index.json"
 SUPPORTED_ARCH = "amd64"
@@ -62,16 +61,19 @@ def Main():
     parser.add_argument("product", type=str, help="Product to install/download.  " \
                         "Currently supported : ('{0}')".format(SUPPORTED_HASHICORPTOOLS))
     parser.add_argument("version", type=str, help="Version to install " \
-                        "(e.g. '0.9.0', 'latest')")                   
+                        "(e.g. '0.9.0', 'latest')")     
+    parser.add_argument("installpath", type=str, help="Path to install tool to " \
+                        "(e.g. '/usr/bin', '/home/someuser/bin')")                     
     parser.add_argument("-y", "--yes", action="store_true", help="Suppress confirmation prompt. " \
                         "If you want total silence use in conjunction with -q")
     parser.add_argument("-q", "--quiet", action="store_true", help="Suppress all messages " \
                         "(quiet mode). Useful for automated installs.")
-    parser.add_argument("-v", "--version", action="version", version="1.5")
+    parser.add_argument("-v", "--version", action="version", version="1.6")
 
     args = parser.parse_args()
     requestedProductToInstall = args.product.lstrip()
     requestedProductVersion = args.version.lstrip()
+    requestedInstallPath = args.installpath.strip()
 
     try:
         CheckCompat()
@@ -80,12 +82,12 @@ def Main():
             if args.quiet:
                 quietMode = True
             if args.yes:
-               Run(requestedProductToInstall,HASHICORP_TOOLPATH,requestedProductVersion,quietMode)
+               Run(requestedProductToInstall,requestedInstallPath,requestedProductVersion,quietMode)
             else:
-                answer = input(PromptQuestion(requestedProductToInstall,HASHICORP_TOOLPATH))
+                answer = input(PromptQuestion(requestedProductToInstall,requestedInstallPath))
                 answer = True if answer.lstrip() in ('yes', 'y') else False
                 if answer:
-                    Run(requestedProductToInstall,HASHICORP_TOOLPATH,requestedProductVersion,quietMode)
+                    Run(requestedProductToInstall,requestedInstallPath,requestedProductVersion,quietMode)
         elif requestedProductToInstall == "all":
             #stub
             raise NotImplementedError("Installing 'all' is not supported currently")
@@ -139,7 +141,7 @@ def GetVersions(url, requestedProduct, requestedVersion):
     return dictValidReleasesSorted
 
 
-def Unzip(fullPath,quietMode):
+def Unzip(fullPath,installDirectory, quietMode):
     """ Unzip file and place in tools path location """
     with zipfile.ZipFile(fullPath, 'r') as zip:
         # TODO - check zipfile contents for file number;
@@ -147,7 +149,7 @@ def Unzip(fullPath,quietMode):
         extractedFile = zip.namelist()[0]
         if not quietMode:
             print("[-] - Extracting (unzip) -> [{0}] ...".format(extractedFile))
-        zip.extractall(HASHICORP_TOOLPATH)
+        zip.extractall(installDirectory)
     return extractedFile
 
 
@@ -186,7 +188,7 @@ def Run(requestedProduct, toolInstallPath, version, quietMode):
 
     fullPathToZipfile = (toolInstallPath + zipfile)
     DownloadFile(fullDownloadURL,fullPathToZipfile,quietMode)
-    extractedFile = Unzip(fullPathToZipfile,quietMode)
+    extractedFile = Unzip(fullPathToZipfile,toolInstallPath,quietMode)
     # Finally make the file 775
     # TODO - this would need to be updated to support Windows (unix-like systems such as )
     # MacOS, Linux etc are OK with os.chmod() 

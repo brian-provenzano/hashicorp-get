@@ -2,7 +2,7 @@
 Tool to get latest or 'x' version of Hashicorps tools
 
 ## Description
-Downloads and installs x version (or latest version of sup[ported hasicorp tools - see help])
+Downloads and installs x version (or latest version of supported hashicorp tools - see help])
 
 ## Usage
 ```
@@ -30,7 +30,7 @@ optional arguments:
 
 ```
 
-###NOTE: Trailing slash is currently required on "installpath" parameter!
+### NOTE: Trailing slash is currently required on "installpath" parameter!
 
 ## Initial Setup
 You will need the following third party modules, just pip3 install them as needed or use the requirements.txt file as noted below:

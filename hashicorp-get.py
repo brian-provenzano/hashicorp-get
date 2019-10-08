@@ -87,12 +87,14 @@ def Main():
             if args.quiet:
                 quietMode = True
             if args.yes:
-               Run(requestedProductToInstall,requestedInstallPath,requestedProductVersion,quietMode)
+                validVersions = GetVersions(HASHICORP_ALLRELEASES,requestedProductToInstall,requestedProductVersion)
+                Run(requestedProductToInstall,requestedInstallPath,requestedProductVersion, validVersions, quietMode)
             else:
                 answer = input(PromptQuestion(requestedProductToInstall,requestedInstallPath))
                 answer = True if answer.lstrip() in ('yes', 'y') else False
                 if answer:
-                    Run(requestedProductToInstall,requestedInstallPath,requestedProductVersion,quietMode)
+                    validVersions = GetVersions(HASHICORP_ALLRELEASES,requestedProductToInstall,requestedProductVersion)
+                    Run(requestedProductToInstall,requestedInstallPath,requestedProductVersion, validVersions, quietMode)
         elif requestedProductToInstall == "all":
             #stub
             raise NotImplementedError("Installing 'all' is not supported currently")
@@ -177,16 +179,16 @@ def PromptQuestion(requestedProduct, downloadLocation):
     return question
 
 
-def Run(requestedProduct, toolInstallPath, version, quietMode):
+def Run(requestedProduct, toolInstallPath, versionRequested, validVersions, quietMode):
     fullDownloadURL = ""
     zipfile = ""
-    dictValidReleasesSorted = GetVersions(HASHICORP_ALLRELEASES,requestedProduct,version)
+    #dictValidReleasesSorted = GetVersions(HASHICORP_ALLRELEASES,requestedProduct,versionRequested)
 
-    if (version == "latest"):
-        version = list(dictValidReleasesSorted.keys())[-1] #this sucks, but no dict.first(),last() in python 3
+    if (versionRequested == "latest"):
+        versionRequested = list(validVersions.keys())[-1] #this sucks, but no dict.first(),last() in python 3
 
-    if(dictValidReleasesSorted.get(version) != None):
-        fullDownloadURL = dictValidReleasesSorted.get(version)
+    if(validVersions.get(versionRequested) != None):
+        fullDownloadURL = validVersions.get(versionRequested)
         zipfile = fullDownloadURL.split("/")[-1]  
     else:
         raise ValueError("Version specified was not found.  Try again")

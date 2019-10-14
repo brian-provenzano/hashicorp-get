@@ -2,7 +2,7 @@
 Tool to get latest or 'x' version of Hashicorps tools
 
 ## Description
-Downloads and installs x version (or latest version of supported hashicorp tools - see help])
+Downloads and installs x version (or latest version of supported hashicorp tools - see help]).  Supports pulling the binary for macos and linux (method use should work on other platforms but NOT tested).  Currently only supports the x86_64 arch.
 
 ## Usage
 ```
@@ -30,7 +30,21 @@ optional arguments:
 
 ```
 
+Example to pull latest version of packer and install to `~/bin/`:
+
+```
+hashicorp-get packer latest ~/bin/
+```
+
+Example to pull 0.11.14 version of terraform and install to `~/bin/`:
+
+```
+hashicorp-get terraform 0.11.14 ~/bin/
+```
+
+
 ### NOTE: Trailing slash is currently required on "installpath" parameter!
+
 
 ## Initial Setup
 You will need the following third party modules, just pip3 install them as needed or use the requirements.txt file as noted below:
@@ -41,8 +55,6 @@ Example pip3 install the requirements:
 pip3 install -r requirements.txt
 
 ```
-
-Note: Tested and developed on python 3.6.5 on Linux (Fedora)
 
 ### The following settings must be manually preconfigured in 'hashicorp-get.py'
 
@@ -58,8 +70,6 @@ There are also a few other settings you may wish to set. Those are located in th
 #- END - Do not modify below here!!!
 ##########################################
 ```
-
-##### NOTE: This code was tested on Fedora Linux (python 3.6.5) - there are no guarantees it will work on other platforms.  It should but YMMV.
 
 
 ## Thanks

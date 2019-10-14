@@ -51,7 +51,6 @@ from pathlib import Path
 # API shows all versions for all requestedProducts (entire history)
 HASHICORP_ALLRELEASES = "https://releases.hashicorp.com/index.json"
 SUPPORTED_ARCH = "amd64"
-SUPPORTED_OS = "linux"
 SUPPORTED_HASHICORPTOOLS = "terraform,packer,vault"
 ##########################################
 #- END - Do not modify below here!!!
@@ -120,8 +119,9 @@ def CheckCompat():
     """ check requirements """
     if not ((sys.version_info.major == 3) and (sys.version_info.minor >= 6)):
         raise ValueError("You must be using Python 3.6 to use this utility")
-    if not ((platform.machine() == "x86_64") and (platform.system() == "Linux")):
-        raise ValueError("You must be running Linux x86_64 to use this utility")
+    if not ((platform.machine() == "x86_64")):
+        raise ValueError("You must be running an x86_64 arch to use this utility")
+
 
 
 def GetVersions(url, requestedProduct, requestedVersion):
@@ -133,9 +133,9 @@ def GetVersions(url, requestedProduct, requestedVersion):
         jVersions = jsonResult[requestedProduct]["versions"]
         dictValidReleases = {}
         # do not want pre-releases; filter them out
-        for item in jVersions.items():     
+        for item in jVersions.items():
             for build in item[1]["builds"]:
-                if (build["os"] == SUPPORTED_OS):
+                if (build["os"].casefold() == platform.system().casefold()):
                     if (build["arch"] == SUPPORTED_ARCH):
                         if not (re.search('[a-zA-Z]', item[1]["version"])): 
                             dictValidReleases[item[1]["version"]] = build["url"]

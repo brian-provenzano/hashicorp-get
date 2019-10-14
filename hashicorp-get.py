@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 """This simple script is used to grab latest or version of choice - see CONSTs below for details
 

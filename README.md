@@ -6,40 +6,40 @@ Downloads and installs x version (or latest version of supported hashicorp tools
 
 ## Usage
 ```
-usage: hashicorp-get [-h] [-y] [-q] [-v] product version installpath
+usage: hashicorp-get [-h] [-p PATH] [-y] [-q] [-v] product version
 
 Custom installer for getting latest or specified version of script supported
 Hashicorp tools. To see list of supported tools see help below under 'product'
 arg.
 
 positional arguments:
-  product        Product to install/download. Currently supported :
-                 ('terraform,packer,vault')
-  version        Version to install (e.g. '0.9.0', 'latest')
-  installpath    Path to install tool to (e.g. '/usr/bin/',
-                 '/home/someuser/bin/')
+  product               Product to install/download. Currently supported :
+                        ('terraform,packer,vault')
+  version               Version to install (e.g. '0.9.0', 'latest')
 
 optional arguments:
-  -h, --help     show this help message and exit
-  -y, --yes      Suppress confirmation prompt. If you want total silence use
-                 in conjunction with -q
-  -q, --quiet    Suppress all messages (quiet mode). Useful for automated
-                 installs.
-  -v, --version  show program's version number and exit
-
+  -h, --help            show this help message and exit
+  -p PATH, --path PATH  Path to install tool to (e.g. '/usr/bin/',
+                        '/home/someuser/bin/') - if not specified defaults to
+                        '~/bin'
+  -y, --yes             Suppress confirmation prompt. If you want total
+                        silence use in conjunction with -q
+  -q, --quiet           Suppress all messages (quiet mode). Useful for
+                        automated installs.
+  -v, --version         show program's version number and exit
 
 ```
 
 Example to pull latest version of packer and install to `~/bin/`:
 
 ```
-hashicorp-get packer latest ~/bin/
+hashicorp-get packer latest
 ```
 
-Example to pull 0.11.14 version of terraform and install to `~/bin/`:
+Example to pull 0.11.14 version of terraform and install to `/usr/local/bin/`:
 
 ```
-hashicorp-get terraform 0.11.14 ~/bin/
+hashicorp-get terraform 0.11.14 /usr/local/bin/
 ```
 
 

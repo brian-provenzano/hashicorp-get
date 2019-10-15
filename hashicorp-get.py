@@ -62,12 +62,12 @@ def Main():
     parser = argparse.ArgumentParser(prog="hashicorp-get", description="Custom " \
                         "installer for getting latest or specified version of script supported Hashicorp tools. " \
                         "To see list of supported tools see help below under 'product' arg.")
-    parser.add_argument("product", type=str, help="Product to install/download.  " \
+    parser.add_argument("product", type=str,  help="Product to install/download.  " \
                         "Currently supported : ('{0}')".format(SUPPORTED_HASHICORPTOOLS))
     parser.add_argument("version", type=str, help="Version to install " \
-                        "(e.g. '0.9.0', 'latest')")     
-    parser.add_argument("installpath", type=str, help="Path to install tool to " \
-                        "(e.g. '/usr/bin/', '/home/someuser/bin/')")                     
+                        "(e.g. '0.9.0', 'latest')")
+    parser.add_argument("-p","--path", type=str, help="Path to install tool to " \
+                        "(e.g. '/usr/bin/', '/home/someuser/bin/') - if not specified defaults to '~/bin'")
     parser.add_argument("-y", "--yes", action="store_true", help="Suppress confirmation prompt. " \
                         "If you want total silence use in conjunction with -q")
     parser.add_argument("-q", "--quiet", action="store_true", help="Suppress all messages " \
@@ -77,7 +77,10 @@ def Main():
     args = parser.parse_args()
     requestedProductToInstall = args.product.lstrip()
     requestedProductVersion = args.version.lstrip()
-    requestedInstallPath = args.installpath.strip()
+    if args.path:
+        requestedInstallPath = args.path.strip()
+    else:
+        requestedInstallPath = os.path.expanduser("~/bin/")
 
     try:
         CheckCompat()
@@ -100,7 +103,7 @@ def Main():
         else:
             raise ValueError("You must enter either '{0}' "
                   "for program to install.  "
-                  "Other requestedProduct installs are not supported at this time".format(SUPPORTED_HASHICORPTOOLS))
+                  "Other product installs are not supported at this time".format(SUPPORTED_HASHICORPTOOLS))
     except ValueError as ve:
         print(str(ve))
     except ConnectionError as ce:
@@ -182,14 +185,13 @@ def PromptQuestion(requestedProduct, downloadLocation):
 def Run(requestedProduct, toolInstallPath, versionRequested, validVersions, quietMode):
     fullDownloadURL = ""
     zipfile = ""
-    #dictValidReleasesSorted = GetVersions(HASHICORP_ALLRELEASES,requestedProduct,versionRequested)
 
     if (versionRequested == "latest"):
         versionRequested = list(validVersions.keys())[-1] #this sucks, but no dict.first(),last() in python 3
 
     if(validVersions.get(versionRequested) != None):
         fullDownloadURL = validVersions.get(versionRequested)
-        zipfile = fullDownloadURL.split("/")[-1]  
+        zipfile = fullDownloadURL.split("/")[-1] 
     else:
         raise ValueError("Version specified was not found.  Try again")
 

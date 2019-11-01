@@ -2,8 +2,8 @@
 
 """This simple script is used to grab latest or version of choice - see CONSTs below for details
 
-This script assumes LINUX AMD64 for simplicity and the fact that is all I use currently on my dev laptop / servers.  
-I may update latest for Windows, Mac and ability to choose arch as well.
+This script assumes AMD64 for simplicity and the fact that is all I use currently on my dev laptop / servers.  
+I may later update for Windows, and  choose arch as well.
 
 This attempts to extend this simple "get latest" bash script:
 echo "https://releases.hashicorp.com/terraform/$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | jq -r -M '.current_version')/terraform_$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | jq -r -M '.current_version')_darwin_amd64.zip"
@@ -19,20 +19,16 @@ Example - get 0.9.0 for terraform:
 
 NOTE: trailing slash on installpath is needed!
 
-TODO - support "all" for grabbing all script supported requestedProducts
+TODO - support "all" for grabbing all script supported requested_products
 TODO - support vagrant (download only - do not auto install since it is a rpm/deb/pkg)
 TODO - add additional sanity checks
 TODO - support various archs
 TODO - support checksum checks on the downloaded file
 TODO - support check current installed version / option to confirm overwrite/upgrade
-TODO - maybe refactor this using classes as an exercise; this grew into a serious procedural mess
 
 BJP original 2/21/18"""
-
-# Check : This seems cheeseball but I don't know of another way to do it in scope
-# 3rd party : not standard python module (must install via pip); 
-# Many linux distros however include this by default
-import requests 
+#third-party
+import requests
 
 import zipfile
 import re
@@ -48,7 +44,7 @@ from pathlib import Path
 #- Modify the options below as needed (but probably shouldnt unless supported
 ##########################################
 # Path to location to place the binaries - include the trailing slash!
-# API shows all versions for all requestedProducts (entire history)
+# API shows all versions for all requested_products (entire history)
 HASHICORP_ALLRELEASES = "https://releases.hashicorp.com/index.json"
 SUPPORTED_ARCH = "amd64"
 SUPPORTED_HASHICORPTOOLS = "terraform,packer,vault"
@@ -57,8 +53,8 @@ SUPPORTED_HASHICORPTOOLS = "terraform,packer,vault"
 ##########################################
 
 
-def Main():
-    """ Main()"""
+def main():
+    """ main()"""
     parser = argparse.ArgumentParser(prog="hashicorp-get", description="Custom " \
                         "installer for getting latest or specified version of script supported Hashicorp tools. " \
                         "To see list of supported tools see help below under 'product' arg.")
@@ -72,32 +68,33 @@ def Main():
                         "If you want total silence use in conjunction with -q")
     parser.add_argument("-q", "--quiet", action="store_true", help="Suppress all messages " \
                         "(quiet mode). Useful for automated installs.")
-    parser.add_argument("-v", "--version", action="version", version="1.6")
+    parser.add_argument("-v", "--version", action="version", version="2.0")
 
     args = parser.parse_args()
-    requestedProductToInstall = args.product.lstrip()
-    requestedProductVersion = args.version.lstrip()
+    product = args.product.lstrip()
+    version = args.version.lstrip()
     if args.path:
-        requestedInstallPath = args.path.strip()
+        requested_installpath = args.path.strip()
     else:
-        requestedInstallPath = os.path.expanduser("~/bin/")
+        requested_installpath = os.path.expanduser("~/bin/")
 
     try:
-        CheckCompat()
-        if (requestedProductToInstall in SUPPORTED_HASHICORPTOOLS):
-            quietMode = False
+        check()
+        installpath = requested_installpath if(requested_installpath.endswith("/")) else (requested_installpath + "/")
+        if (product in SUPPORTED_HASHICORPTOOLS):
+            quiet_mode = False
             if args.quiet:
-                quietMode = True
+                quiet_mode = True
             if args.yes:
-                validVersions = GetVersions(HASHICORP_ALLRELEASES,requestedProductToInstall,requestedProductVersion)
-                Run(requestedProductToInstall,requestedInstallPath,requestedProductVersion, validVersions, quietMode)
+                valid_versions = get_versions(HASHICORP_ALLRELEASES,product,version)
+                run(product,installpath,version, valid_versions, quiet_mode)
             else:
-                answer = input(PromptQuestion(requestedProductToInstall,requestedInstallPath))
+                answer = input(prompt_question(product,installpath, version))
                 answer = True if answer.lstrip() in ('yes', 'y') else False
                 if answer:
-                    validVersions = GetVersions(HASHICORP_ALLRELEASES,requestedProductToInstall,requestedProductVersion)
-                    Run(requestedProductToInstall,requestedInstallPath,requestedProductVersion, validVersions, quietMode)
-        elif requestedProductToInstall == "all":
+                    valid_versions = get_versions(HASHICORP_ALLRELEASES,product,version)
+                    run(product,installpath,version, valid_versions, quiet_mode)
+        elif product == "all":
             #stub
             raise NotImplementedError("Installing 'all' is not supported currently")
         else:
@@ -111,14 +108,14 @@ def Main():
               .format(ce))
     except (zipfile.BadZipFile, zipfile.BadZipfile) as bze:
         print("There was an error attempting to decompress the zipfile - REASON [{0}] \n"
-              .format(bze))             
+              .format(bze))
     except TimeoutError as te:
         print("Request timed out trying to reach Hashicorp servers - REASON [{0}]".format(te))
     except Exception as e:
             print("Unknown error - REASON [{0}]".format(e))
 
 
-def CheckCompat():
+def check():
     """ check requirements """
     if not ((sys.version_info.major == 3) and (sys.version_info.minor >= 6)):
         raise ValueError("You must be using Python 3.6 to use this utility")
@@ -127,94 +124,91 @@ def CheckCompat():
 
 
 
-def GetVersions(url, requestedProduct, requestedVersion):
+def get_versions(url, requested_product, requested_version):
     """ get dict of GA release versions with download url (version,url) """
-    dictValidReleasesSorted = {}
+    valid_releasessorted = {}
     response = requests.get(url)
     if response.status_code == 200:
-        jsonResult = response.json()
-        jVersions = jsonResult[requestedProduct]["versions"]
-        dictValidReleases = {}
+        json_result = response.json()
+        versions = json_result[requested_product]["versions"]
+        valid_releases = {}
         # do not want pre-releases; filter them out
-        for item in jVersions.items():
+        for item in versions.items():
             for build in item[1]["builds"]:
                 if (build["os"].casefold() == platform.system().casefold()):
                     if (build["arch"] == SUPPORTED_ARCH):
-                        if not (re.search('[a-zA-Z]', item[1]["version"])): 
-                            dictValidReleases[item[1]["version"]] = build["url"]
+                        if not (re.search('[a-zA-Z]', item[1]["version"])):
+                            valid_releases[item[1]["version"]] = build["url"]
 
-        for key in sorted(dictValidReleases,key=LooseVersion):
-            dictValidReleasesSorted[key] = dictValidReleases[key]
+        for key in sorted(valid_releases,key=LooseVersion):
+            valid_releasessorted[key] = valid_releases[key]
     else:
         raise requests.ConnectionError("Server did not return status 200 - returned {0}".format(response.status_code))
 
-    return dictValidReleasesSorted
+    return valid_releasessorted
 
 
-def Unzip(fullPath,installDirectory, quietMode):
-    """ Unzip file and place in tools path location """
+def unzip(fullPath,installDirectory, quiet_mode):
+    """ unzip file and place in tools path location """
     with zipfile.ZipFile(fullPath, 'r') as zip:
         # TODO - check zipfile contents for file number;
         # should always be 1 binary file unless Hashicorp jumps the shark on the build
-        extractedFile = zip.namelist()[0]
-        if not quietMode:
-            print("[-] - Extracting (unzip) -> [{0}] ...".format(extractedFile))
+        extracted_file = zip.namelist()[0]
+        if not quiet_mode:
+            print("[-] - Extracting (unzip) -> [{0}] ...".format(extracted_file))
         zip.extractall(installDirectory)
-    return extractedFile
+    return extracted_file
 
 
-def DownloadFile(url, theFile, quietMode):
+def download_file(url, afile, quiet_mode):
     """ Download/save the file from Hashicorp servers """
     # open in binary mode
-    with open(theFile, "wb") as file:
-        if not quietMode:
+    with open(afile, "wb") as file:
+        if not quiet_mode:
             print("[-] - Downloading -> [{0}] ...".format(url))
         response = requests.get(url)
-        if not quietMode:
-            print("[-] - Saving -> [{0}] ...".format(theFile))
+        if not quiet_mode:
+            print("[-] - Saving -> [{0}] ...".format(afile))
         file.write(response.content)
 
 
-def PromptQuestion(requestedProduct, downloadLocation):
+def prompt_question(requested_product, downloadLocation, requested_version):
     """ Prompt user to confirm and continue"""
-    question = "\n {0} selected!!: Are you sure you wish to download the latest " \
-               "version of '{0}' to {1} ?: ".format(requestedProduct.upper(), downloadLocation)
+    question = "\n {0} selected!!: Are you sure you wish to download the {2} " \
+               "version of '{0}' to {1} ?: ".format(requested_product.upper(), downloadLocation, requested_version)
     return question
 
 
-def Run(requestedProduct, toolInstallPath, versionRequested, validVersions, quietMode):
-    fullDownloadURL = ""
+def run(requested_product, install_path, requested_version, valid_versions, quiet_mode):
+    full_download = ""
     zipfile = ""
 
-    if (versionRequested == "latest"):
-        versionRequested = list(validVersions.keys())[-1] #this sucks, but no dict.first(),last() in python 3
+    if (requested_version == "latest"):
+        requested_version = list(valid_versions.keys())[-1] #this sucks, but no dict.first(),last() in python 3
 
-    if(validVersions.get(versionRequested) != None):
-        fullDownloadURL = validVersions.get(versionRequested)
-        zipfile = fullDownloadURL.split("/")[-1] 
+    if(valid_versions.get(requested_version) != None):
+        full_download = valid_versions.get(requested_version)
+        zipfile = full_download.split("/")[-1]
     else:
         raise ValueError("Version specified was not found.  Try again")
 
-    fullPathToZipfile = (toolInstallPath + zipfile)
-    DownloadFile(fullDownloadURL,fullPathToZipfile,quietMode)
-    extractedFile = Unzip(fullPathToZipfile,toolInstallPath,quietMode)
-    # Finally make the file 775
+    fullpath_to_zipfile = (install_path + zipfile)
+    download_file(full_download,fullpath_to_zipfile,quiet_mode)
+    extracted_file = unzip(fullpath_to_zipfile,install_path,quiet_mode)
     # TODO - this would need to be updated to support Windows (unix-like systems such as )
-    # MacOS, Linux etc are OK with os.chmod() 
-    os.chmod((toolInstallPath + extractedFile),0o775)
-
-    #cleanup
-    Clean(fullPathToZipfile,quietMode)
-    if not quietMode:
+    # MacOS, Linux etc are OK with os.chmod()
+    os.chmod((install_path + extracted_file),0o755)
+    clean(fullpath_to_zipfile,quiet_mode)
+    if not quiet_mode:
         print("[-] - Done!!")
 
-def Clean(theZipFile,quietMode):
-    """ Clean up old zip file, etc after download """
-    previousZip = Path(theZipFile)
-    if previousZip.is_file():
-        previousZip.unlink()
-        if not quietMode:
-            print("[-] - Cleaning up (Deleting zipfile) -> [{0}]".format(theZipFile))
+def clean(zip_file,quiet_mode):
+    """ clean up old zip file, etc after download """
+    previous_zip = Path(zip_file)
+    if previous_zip.is_file():
+        previous_zip.unlink()
+        if not quiet_mode:
+            print("[-] - cleaning up (Deleting zipfile) -> [{0}]".format(zip_file))
 
 if __name__ == '__main__':
-    Main()
+    main()

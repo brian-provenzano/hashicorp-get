@@ -43,9 +43,6 @@ hashicorp-get terraform 0.11.14 /usr/local/bin/
 ```
 
 
-### NOTE: Trailing slash is currently required on "installpath" parameter!
-
-
 ## Initial Setup
 You will need the following third party modules, just pip3 install them as needed or use the requirements.txt file as noted below:
 - requests: http://docs.python-requests.org/en/master/
